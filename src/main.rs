@@ -31,8 +31,8 @@ fn main2() -> i32 {
                 cli::print_usage(&opts);
                 Ok(())
             }
-            cli::Command::Process { input_path, output_path } => {
-                process(input_path, output_path)
+            cli::Command::Process { input_path, output_path, invert } => {
+                process(input_path, output_path, invert)
             }
         }
     });
@@ -45,7 +45,7 @@ fn main2() -> i32 {
 
 /// Reads an ABR file at `input_path` and extracts the image brushes
 /// as PNGs, writing them to the directory `output_path`.
-fn process(input_path: PathBuf, output_path: PathBuf) -> Result<(), Error> {
+fn process(input_path: PathBuf, output_path: PathBuf, invert: bool) -> Result<(), Error> {
     let file = File::open(&input_path)
         .map_err(|e| Error::CouldntOpenFile {
             file_path: input_path,
@@ -53,18 +53,19 @@ fn process(input_path: PathBuf, output_path: PathBuf) -> Result<(), Error> {
         })?;
     let rdr = std::io::BufReader::new(file);
 
+    // let brushes = abr::open_asl(rdr)
     let brushes = abr::open(rdr)
         .map_err(|e| Error::CouldntOpenAbr(e))?;
 
-    std::fs::create_dir(&output_path)
+    let _ = std::fs::create_dir(&output_path)
         .map_err(|e| Error::CouldntCreateOutputDir {
             output_path: output_path.clone(),
             err: e,
-        })?;
+        });
 
     for (idx, brush_result) in brushes.enumerate() {
         let save_path = output_path.join(Path::new(&format!("{}.png", idx)));
-        match process_brush(brush_result, &save_path) {
+        match process_brush(brush_result, &save_path, invert) {
             Ok(()) => println!("Wrote {}.", save_path.display()),
             Err(e) => eprintln!("error on brush {}: {}", idx, e),
         }
@@ -76,9 +77,12 @@ fn process(input_path: PathBuf, output_path: PathBuf) -> Result<(), Error> {
 /// Saves the result of reading out a brush to `save_path`. Returns an
 /// error if either the reading failed or the writing fails.
 fn process_brush(brush_result: Result<abr::ImageBrush, abr::BrushError>,
-              save_path: &Path)
+              save_path: &Path, invert: bool)
               -> Result<(), ProcessBrushError> {
-    let brush = brush_result?;
+    let mut brush = brush_result?;
+    if invert {
+        brush.invert();
+    }
     png::save_greyscale(save_path,
                         &brush.data[..],
                         brush.width,

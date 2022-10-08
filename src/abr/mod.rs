@@ -1,6 +1,7 @@
 extern crate byteorder;
 mod abr1;
 mod abr6;
+mod asl;
 mod err;
 mod util;
 
@@ -11,6 +12,7 @@ use std::io::{Read, Seek};
 enum Decoder<R> {
     Abr1(abr1::Decoder<R>),
     Abr6(abr6::Decoder<R>),
+    Asl(asl::Decoder<R>),
 }
 
 /// An image brush.
@@ -24,6 +26,15 @@ pub struct ImageBrush {
     pub depth: u16,
     /// Row-major vector of width×height image samples.
     pub data: Vec<u8>,
+}
+
+impl ImageBrush {
+    /// Inverts the image.
+    pub fn invert(&mut self) {
+        for sample in &mut self.data {
+            *sample = 255 - *sample;
+        }
+    }
 }
 
 /// An iterator over an ABR's image brushes.
@@ -50,6 +61,18 @@ pub fn open<R: Read + Seek>(mut rdr: R) -> Result<Brushes<R>, OpenError> {
     ))
 }
 
+pub fn open_asl<R: Read + Seek>(mut rdr: R) -> Result<Brushes<R>, OpenError> {
+    let version = rdr.read_u16::<BigEndian>()?;
+
+    Ok(Brushes(
+        if version == 2 {
+            Decoder::Asl(asl::open(rdr, version)?)
+        } else {
+            return Err(OpenError::UnsupportedVersion { version, subversion: 0 });
+        }
+    ))
+}
+
 impl<R: Read + Seek> Iterator for Brushes<R> {
     type Item = Result<ImageBrush, BrushError>;
 
@@ -57,6 +80,7 @@ impl<R: Read + Seek> Iterator for Brushes<R> {
         match self.0 {
             Decoder::Abr6(ref mut dec) => abr6::next_brush(dec),
             Decoder::Abr1(ref mut dec) => abr1::next_brush(dec),
+            Decoder::Asl(ref mut dec) => asl::next_brush(dec),
         }
     }
 }

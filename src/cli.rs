@@ -8,12 +8,14 @@ pub enum Command {
     Process {
         input_path: PathBuf,
         output_path: PathBuf,
+        invert: bool,
     },
 }
 
 pub fn make_options() -> Options {
     let mut opts = Options::new();
     opts.optopt("o", "", "set output directory (will be created)", "DIR");
+    opts.optflag("i", "invert", "inverts the brush images");
     opts.optflag("h", "help", "print this help menu");
     opts
 }
@@ -49,6 +51,8 @@ pub fn parse_cli_options(opts: &Options) -> Result<Command, Error> {
             }
         };
 
-        Ok(Command::Process { input_path, output_path })
+        let invert = matches.opt_present("i");
+
+        Ok(Command::Process { input_path, output_path, invert })
     }
 }
