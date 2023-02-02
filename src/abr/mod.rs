@@ -48,7 +48,7 @@ pub fn open<R: Read + Seek>(mut rdr: R) -> Result<Brushes<R>, OpenError> {
     let abr1_like =
         version == 1 || version == 2;
     let abr6_like =
-        (version == 6 || version == 10) && (subversion == 1 || subversion == 2);
+        (version == 6 || version == 9 || version == 10) && (subversion == 1 || subversion == 2);
 
     Ok(Brushes(
         if abr1_like {
@@ -70,6 +70,12 @@ pub fn open_asl<R: Read + Seek>(mut rdr: R) -> Result<Brushes<R>, OpenError> {
         } else {
             return Err(OpenError::UnsupportedVersion { version, subversion: 0 });
         }
+    ))
+}
+
+pub fn open_tpl<R: Read + Seek>(mut rdr: R) -> Result<Brushes<R>, OpenError> {
+    Ok(Brushes(
+        Decoder::Asl(asl::open(rdr, 2)?)
     ))
 }
 

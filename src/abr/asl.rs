@@ -85,7 +85,14 @@ fn do_brush_head<R: Read + Seek>(dec: &mut Decoder<R>)
 /// With `dec` positioned by `do_brush_head`, reads out a brush.
 fn do_brush_body<R: Read + Seek>(dec: &mut Decoder<R>) -> Result<ImageBrush, BrushError> {
     // Skip over... something.
-    let skip_amt = 0x6d;
+    dec.rdr.seek(SeekFrom::Current(8))?;
+
+    let _height = dec.rdr.read_u16::<BigEndian>()?;
+    let _width = dec.rdr.read_u16::<BigEndian>()?;
+    let name_len = dec.rdr.read_u32::<BigEndian>()?;
+    dec.rdr.seek(SeekFrom::Current(2 * name_len as i64))?;
+
+    let skip_amt = 0x6b - 4 - 26; // 0x6d, 0x7d;
     dec.rdr.seek(SeekFrom::Current(skip_amt))?;
 
     let top = dec.rdr.read_u32::<BigEndian>()?;

@@ -20,9 +20,9 @@
 				}
 			},
 			"args": [
-				"C:/Users/chris/Downloads/mike_nash_charcoal/PAPER OVERLAY (Styles).asl",
+				"C:/Users/chris/Desktop/Resources/Monster_skin.abr",
 				"-o",
-				"C:/Users/chris/Downloads/mike_nash_charcoal/bleh"
+				"C:/Users/chris/Desktop/Resources/Zsolt_Kosa_Monster_skin"
 			],
 			"cwd": "${workspaceFolder}"
 		},
